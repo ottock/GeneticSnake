@@ -21,9 +21,9 @@ FPS_MAX = 240
 
 def _make_fonts():
     return (
-        pygame.font.SysFont("consolas", 26, bold=True),
-        pygame.font.SysFont("consolas", 20, bold=True),
-        pygame.font.SysFont("consolas", 13),
+        pygame.font.SysFont("consolas", 24, bold=True),
+        pygame.font.SysFont("consolas", 18, bold=True),
+        pygame.font.SysFont("consolas", 12),
     )
 
 
@@ -34,21 +34,20 @@ def _build_info(trainer, visualize, fps_cap, fps_target):
         "score":                trainer.snake.score,
         "length":               len(trainer.snake.body),
         "steps":                trainer.snake.steps,
-        "fitness":              trainer.current_fitness(),
+        "pontuacao":            trainer.current_pontuacao(),
         "best_ever_generation": trainer.best_ever_generation,
-        "best_ever_score":      trainer.best_ever_score,
-        "avg_fitness":          trainer.avg_fitness,
-        "remaining":            len(trainer.population) - trainer.idx,
+        "avg_pontuacao":        trainer.avg_pontuacao,
         "visualize":            visualize,
         "fps_cap":              fps_cap,
         "fps_target":           fps_target,
+        "chromosome":           trainer.snake.chromosome,
     }
 
 
 def run():
     pygame.init()
     screen = pygame.display.set_mode((INIT_WIN_W, INIT_WIN_H), pygame.RESIZABLE)
-    pygame.display.set_caption("GeneticSnake - (GA)")
+    pygame.display.set_caption("GeneticSnake - Algoritmo Genetico (Roleta)")
     clock = pygame.time.Clock()
     fonts = _make_fonts()
     layout = Layout(INIT_WIN_W, INIT_WIN_H)
@@ -65,11 +64,11 @@ def run():
         if not snake_alive:
             if not trainer.next_individual():
                 summary = trainer.advance_generation()
-                if summary["best_genome"] is not None:
-                    save_best(summary["best_genome"],
+                if summary["best_chromosome"] is not None:
+                    save_best(summary["best_chromosome"],
                               summary["generation"],
                               summary["best_score"],
-                              summary["best_fitness"])
+                              summary["best_pontuacao"])
 
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:

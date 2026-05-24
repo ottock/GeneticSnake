@@ -1,47 +1,56 @@
 import os
 
+# --- Tabuleiro / regras do jogo ---
 GRID_W, GRID_H = 20, 20
 MAX_STEPS_PER_FOOD = 150
+VISION_RANGE = 8
 
+# Direcoes: 0=cima 1=baixo 2=esquerda 3=direita
 MOVES = [(0, -1), (0, 1), (-1, 0), (1, 0)]
-RAYS = [(0, -1), (1, -1), (1, 0), (1, 1),
-        (0, 1), (-1, 1), (-1, 0), (-1, -1)]
-FRONT_RAY = {0: 0, 3: 2, 1: 4, 2: 6}
 LEFT_TURN  = {0: 2, 2: 1, 1: 3, 3: 0}
 RIGHT_TURN = {0: 3, 3: 1, 1: 2, 2: 0}
 
-INPUT_SIZE = 24
-HIDDEN1 = 20
-HIDDEN2 = 12
-OUTPUT_SIZE = 3
+# --- Cromossomo da cobra ---
+# Cada cobra (individuo) tem um cromossomo = vetor de 8 pesos. Cada peso
+# pondera uma feature do estado resultante de cada acao possivel (esquerda,
+# reto, direita). A acao de maior pontuacao (cromossomo . features) e'
+# escolhida.
+ACTION_COUNT = 3
+FEATURE_COUNT = 8
+CHROMOSOME_SIZE = FEATURE_COUNT
 
-LAYER_SHAPES = [
-    (HIDDEN1, INPUT_SIZE),  (HIDDEN1,),
-    (HIDDEN2, HIDDEN1),     (HIDDEN2,),
-    (OUTPUT_SIZE, HIDDEN2), (OUTPUT_SIZE,),
-]
+# Nome curto de cada bit do cromossomo (mesma ordem das features)
+FEATURE_LABELS = (
+    "morre",
+    "1/dist_parede",
+    "1/dist_corpo",
+    "comida_visao",
+    "alinha_comida",
+    "aproxima",
+    "densidade",
+    "bias",
+)
 
-POP_SIZE = 200
-ELITE_COUNT = 8
-TOURNAMENT_K = 4
-MUTATION_RATE = 0.04
-MUTATION_STRENGTH = 0.15
-CROSSOVER_RATE = 0.85
+# Descricao longa de cada bit do cromossomo, exibida no painel
+FEATURE_DESCRIPTIONS = (
+    "1 se a acao mata a cobra",
+    "inverso da dist. ate a parede",
+    "inverso da dist. ate o corpo",
+    "1 se comida esta na linha de visao",
+    "cosseno do angulo com a comida",
+    "1 se acao aproxima da comida",
+    "fracao de celulas vizinhas com corpo",
+    "termo constante (offset)",
+)
 
-SELECTION = "roulette"
-CROSSOVER = "one_point"
+# --- Parametros do Algoritmo Genetico ---
+POP_SIZE = 10           # tamanho da populacao por geracao
+MUTATION_RATE = 0.15    # probabilidade de cada bit do cromossomo sofrer mutacao
+MUTATION_STRENGTH = 0.25  # intensidade da mutacao
+CROSSOVER_RATE = 0.85   # probabilidade de cruzamento (senao copia o pai 1)
+CROSSOVER = "um_ponto"  # "um_ponto" ou "uniforme"
+
+# Selecao por roleta (Monte Carlo): unica estrategia.
+SELECTION = "roleta"
 
 CHECKPOINT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "checkpoints")
-
-
-def _genome_size():
-    n = 0
-    for shape in LAYER_SHAPES:
-        prod = 1
-        for d in shape:
-            prod *= d
-        n += prod
-    return n
-
-
-GENOME_SIZE = _genome_size()

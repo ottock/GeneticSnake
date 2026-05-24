@@ -1,3 +1,11 @@
+"""Renderizacao: cobra a esquerda, painel informativo a direita.
+
+O painel mostra:
+  - estatisticas do individuo atual e da populacao
+  - parametros do Algoritmo Genetico
+  - os bits do cromossomo da cobra que esta sendo avaliada agora
+"""
+
 import pygame
 
 from core.ai import config
@@ -31,8 +39,142 @@ def draw_game(screen, layout, snake):
                          border_radius=max(2, cell // 6))
 
 
+def _draw_panel_header(screen, fonts, inner_l, y):
+    fbig, _, ftiny = fonts
+    screen.blit(fbig.render("Genetic Snake", True, P.HEADER), (inner_l, y))
+    y += 28
+    screen.blit(ftiny.render("algoritmo genetico - selecao por roleta",
+                             True, P.TEXT_DIM), (inner_l, y))
+    return y + 18
+
+
+def _section(screen, fonts, inner_l, inner_r, y, title):
+    _, _, ftiny = fonts
+    y += 5
+    pygame.draw.line(screen, P.DIVIDER, (inner_l, y), (inner_r, y))
+    y += 5
+    screen.blit(ftiny.render(title.upper(), True, P.ACCENT), (inner_l, y))
+    return y + 14
+
+
+def _draw_kv_pair(screen, fonts, x_a, x_b, y, label_a, val_a, label_b, val_b,
+                  color_a, color_b):
+    _, fmid, ftiny = fonts
+    screen.blit(ftiny.render(label_a, True, P.TEXT_DIM), (x_a, y))
+    screen.blit(fmid.render(str(val_a), True, color_a), (x_a, y + 12))
+    screen.blit(ftiny.render(label_b, True, P.TEXT_DIM), (x_b, y))
+    screen.blit(fmid.render(str(val_b), True, color_b), (x_b, y + 12))
+    return y + 34
+
+
+def _draw_individual(screen, fonts, inner_l, inner_r, col2, y, info):
+    y = _section(screen, fonts, inner_l, inner_r, y, "Individuo atual")
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Geracao",   info['generation'],
+                      "Individuo", f"{info['individual']}/{config.POP_SIZE}",
+                      P.ACCENT, P.TEXT)
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Comidas", info['score'],
+                      "Tamanho", info['length'],
+                      P.TEXT, P.TEXT)
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Passos",    info['steps'],
+                      "Pontuacao", f"{info['pontuacao']:.0f}",
+                      P.TEXT, P.TEXT)
+    return y
+
+
+def _draw_stats(screen, fonts, inner_l, inner_r, col2, y, info):
+    _, fmid, ftiny = fonts
+    y = _section(screen, fonts, inner_l, inner_r, y, "Estatisticas")
+    screen.blit(ftiny.render("Melhor geracao", True, P.TEXT_DIM),
+                (inner_l, y))
+    screen.blit(fmid.render(str(info['best_ever_generation']),
+                            True, P.ACCENT), (inner_l, y + 12))
+    y += 34
+    screen.blit(ftiny.render("Pontuacao media", True, P.TEXT_DIM),
+                (inner_l, y))
+    screen.blit(fmid.render(f"{info['avg_pontuacao']:.0f}", True, P.TEXT),
+                (inner_l, y + 12))
+    return y + 34
+
+
+def _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y):
+    y = _section(screen, fonts, inner_l, inner_r, y, "Parametros GA")
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Selecao",    config.SELECTION,
+                      "Cruzamento", config.CROSSOVER,
+                      P.TEXT, P.TEXT)
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Populacao", config.POP_SIZE,
+                      "Cruz %",    f"{int(config.CROSSOVER_RATE * 100)}%",
+                      P.TEXT, P.TEXT)
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Mutacao",      f"{int(config.MUTATION_RATE * 100)}%",
+                      "Mut. intens.", f"{config.MUTATION_STRENGTH:.2f}",
+                      P.TEXT, P.TEXT)
+    return y
+
+
+def _draw_chromosome(screen, fonts, inner_l, inner_r, y, chromosome):
+    """Mostra os bits do cromossomo da cobra atual com seus rotulos."""
+    _, _, ftiny = fonts
+    y = _section(screen, fonts, inner_l, inner_r, y,
+                 f"Cromossomo ({config.CHROMOSOME_SIZE} bits)")
+    if chromosome is None:
+        screen.blit(ftiny.render("(sem cromossomo)", True, P.TEXT_DIM),
+                    (inner_l, y))
+        return y + 14
+    val_x = inner_l + 130
+    bar_x = inner_l + 180
+    bar_w = inner_r - bar_x
+    bar_h = 7
+    row_h = 14
+    max_abs = max(1e-6, float(max(abs(float(v)) for v in chromosome)))
+    for i, value in enumerate(chromosome):
+        v = float(value)
+        label = config.FEATURE_LABELS[i]
+        screen.blit(ftiny.render(f"b{i} {label}", True, P.TEXT),
+                    (inner_l, y))
+        num_color = P.BIT_POS if v >= 0 else P.BIT_NEG
+        screen.blit(ftiny.render(f"{v:+.2f}", True, num_color),
+                    (val_x, y))
+        mid = bar_x + bar_w // 2
+        pygame.draw.line(screen, P.DIVIDER,
+                         (bar_x, y + row_h // 2),
+                         (bar_x + bar_w, y + row_h // 2))
+        pygame.draw.line(screen, P.TEXT_DIM,
+                         (mid, y + row_h // 2 - 3),
+                         (mid, y + row_h // 2 + 3))
+        norm = v / max_abs
+        bw = int(abs(norm) * (bar_w // 2 - 2))
+        rx = mid if v >= 0 else mid - bw
+        pygame.draw.rect(screen, num_color,
+                         (rx, y + row_h // 2 - bar_h // 2, bw, bar_h))
+        y += row_h + 2
+    return y
+
+
+def _draw_controls(screen, fonts, inner_l, inner_r, y, info):
+    _, _, ftiny = fonts
+    y = _section(screen, fonts, inner_l, inner_r, y, "Comandos")
+    fps_label = (f"{info['fps_target']} fps"
+                 if info['fps_cap'] else "ilimitado")
+    hints = (
+        ("[UP/DOWN]", f"velocidade  {fps_label}"),
+        ("[SPACE]",   f"limite fps  {'on' if info['fps_cap'] else 'off'}"),
+        ("[TAB]",     f"renderizar  {'on' if info['visualize'] else 'off'}"),
+        ("[ESC]",     "sair"),
+    )
+    for key, desc in hints:
+        screen.blit(ftiny.render(key, True, P.ACCENT), (inner_l, y))
+        screen.blit(ftiny.render(desc, True, P.TEXT_DIM),
+                    (inner_l + 88, y))
+        y += 16
+    return y
+
+
 def draw_panel(screen, layout, fonts, info):
-    fbig, fmid, ftiny = fonts
     x0 = layout.panel_x
     pad = 18
     inner_l = x0 + pad
@@ -41,72 +183,11 @@ def draw_panel(screen, layout, fonts, info):
 
     pygame.draw.rect(screen, P.PANEL_BG, (x0, 0, layout.panel_w, layout.win_h))
 
-    y = 16
-    screen.blit(fbig.render("Genetic Snake", True, P.HEADER), (inner_l, y))
-    y += 30
-    screen.blit(ftiny.render("rede neural + algoritmo genetico",
-                             True, P.TEXT_DIM), (inner_l, y))
-    y += 20
-
-    def section(title):
-        nonlocal y
-        y += 6
-        pygame.draw.line(screen, P.DIVIDER, (inner_l, y), (inner_r, y))
-        y += 6
-        screen.blit(ftiny.render(title.upper(), True, P.ACCENT), (inner_l, y))
-        y += 18
-
-    def cell_kv(x, label, value, color):
-        screen.blit(ftiny.render(label, True, P.TEXT_DIM), (x, y))
-        v = fmid.render(str(value), True, color)
-        screen.blit(v, (x, y + 14))
-
-    def row_pair(label_a, val_a, label_b, val_b,
-                 color_a=P.TEXT, color_b=P.TEXT):
-        nonlocal y
-        cell_kv(inner_l, label_a, val_a, color_a)
-        cell_kv(col2,    label_b, val_b, color_b)
-        y += 40
-
-    # ---------- INDIVIDUO ATUAL ----------
-    section("Individuo atual")
-    row_pair("Geracao", info['generation'],
-             "Cobra",   f"{info['individual']}/{config.POP_SIZE}",
-             color_a=P.ACCENT)
-    row_pair("Score",   info['score'],
-             "Tamanho", info['length'])
-    row_pair("Passos",  info['steps'],
-             "Fitness", f"{info['fitness']:.0f}")
-
-    # ---------- ESTATISTICAS ----------
-    section("Estatisticas")
-    row_pair("Melhor gen",   info['best_ever_generation'],
-             "Melhor score", info['best_ever_score'],
-             color_a=P.ACCENT, color_b=P.ACCENT)
-    row_pair("Fitness medio", f"{info['avg_fitness']:.0f}",
-             "Restantes",     info['remaining'])
-
-    # ---------- PARAMETROS GA (Aula slides 8/10/11) ----------
-    section("Parametros GA")
-    row_pair("Selecao",    config.SELECTION,
-             "Cruzamento", config.CROSSOVER)
-    row_pair("Pop",     config.POP_SIZE,
-             "Elite",   config.ELITE_COUNT)
-    row_pair("Mutacao", f"{int(config.MUTATION_RATE * 100)}%",
-             "Cross %", f"{int(config.CROSSOVER_RATE * 100)}%")
-
-    # ---------- RODAPE ----------
-    fps_label = (f"{info['fps_target']} fps"
-                 if info['fps_cap'] else "ilimitado")
-    hints = [
-        ("[UP/DOWN]", f"velocidade  {fps_label}"),
-        ("[SPACE]",   f"limite fps  {'on' if info['fps_cap'] else 'off'}"),
-        ("[TAB]",     f"renderizar  {'on' if info['visualize'] else 'off'}"),
-        ("[ESC]",     "sair"),
-    ]
-    hy = layout.win_h - 18 * len(hints) - 10
-    for key, desc in hints:
-        screen.blit(ftiny.render(key, True, P.ACCENT), (inner_l, hy))
-        screen.blit(ftiny.render(desc, True, P.TEXT_DIM),
-                    (inner_l + 92, hy))
-        hy += 18
+    y = 14
+    y = _draw_panel_header(screen, fonts, inner_l, y)
+    y = _draw_individual(screen, fonts, inner_l, inner_r, col2, y, info)
+    y = _draw_stats(screen, fonts, inner_l, inner_r, col2, y, info)
+    y = _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y)
+    y = _draw_chromosome(screen, fonts, inner_l, inner_r, y,
+                         info.get("chromosome"))
+    _draw_controls(screen, fonts, inner_l, inner_r, y, info)

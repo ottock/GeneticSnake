@@ -1,13 +1,16 @@
-"""Calculo de layout para janela redimensionavel."""
+"""Calculo de layout para janela redimensionavel.
+
+Layout: cobra no canto esquerdo, painel de informacoes na direita.
+"""
 
 from core.ai import config
 
-INIT_WIN_W = 1120
-INIT_WIN_H = 700
-MIN_WIN_W = 700
-MIN_WIN_H = 460
-MIN_PANEL_W = 280
-MAX_PANEL_W = 460
+INIT_WIN_W = 1240
+INIT_WIN_H = 660
+MIN_WIN_W = 800
+MIN_WIN_H = 480
+MIN_PANEL_W = 340
+MAX_PANEL_W = 520
 
 
 class Layout:
@@ -15,7 +18,7 @@ class Layout:
         self.win_w = max(MIN_WIN_W, win_w)
         self.win_h = max(MIN_WIN_H, win_h)
         self.panel_w = max(MIN_PANEL_W,
-                           min(MAX_PANEL_W, int(self.win_w * 0.32)))
+                           min(MAX_PANEL_W, int(self.win_w * 0.38)))
         area_w = self.win_w - self.panel_w
         area_h = self.win_h
         self.cell = max(8, min(area_w // config.GRID_W,
