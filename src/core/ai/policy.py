@@ -16,7 +16,9 @@ _INIT_PRIOR = np.array([
 
 # 0.0 = puramente aleatorio (evolucao demora pra arrancar)
 # 1.0 = prior forte (geracao 1 ja joga bem)
-_INIT_STRENGTH = 0.1
+# Em 0.5, a populacao inicial mantem diversidade (ruido std 0.6 ainda domina
+# os pesos individuais), mas com inclinacao suficiente pra evitar suicidio.
+_INIT_STRENGTH = 0.5
 
 
 def random_chromosome():

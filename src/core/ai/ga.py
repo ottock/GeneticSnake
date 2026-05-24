@@ -11,14 +11,20 @@ def roulette_selection(pop_scored):
 
     Cada individuo ocupa uma porcao da roleta proporcional a sua pontuacao.
     Maior pontuacao => maior chance de ser escolhido como pai.
+
+    Pontuacoes podem ser negativas (penalidade por passos sem comer); por
+    isso deslocamos todos os valores para serem nao-negativos antes da
+    roleta, preservando as diferencas proporcionais.
     """
-    total = sum(p for _, p in pop_scored)
+    min_p = min(p for _, p in pop_scored)
+    shift = -min_p + 1e-6 if min_p < 0 else 0.0
+    total = sum(p + shift for _, p in pop_scored)
     if total <= 0:
         return random.choice(pop_scored)[0]
     r = random.uniform(0.0, total)
     acc = 0.0
     for chromosome, p in pop_scored:
-        acc += p
+        acc += p + shift
         if acc >= r:
             return chromosome
     return pop_scored[-1][0]
@@ -61,7 +67,8 @@ def evolve(population, scores):
     """Produz a proxima geracao: roleta + cruzamento + mutacao."""
     pop_scored = list(zip(population, scores))
     new_pop = []
-    while len(new_pop) < config.POP_SIZE:
+    target_size = len(population)
+    while len(new_pop) < target_size:
         p1 = roulette_selection(pop_scored)
         p2 = roulette_selection(pop_scored)
         new_pop.append(mutate(crossover(p1, p2)))

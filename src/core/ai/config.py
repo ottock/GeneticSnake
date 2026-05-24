@@ -46,7 +46,7 @@ FEATURE_DESCRIPTIONS = (
 # --- Parametros do Algoritmo Genetico ---
 POP_SIZE = 10           # tamanho da populacao por geracao
 MUTATION_RATE = 0.15    # probabilidade de cada bit do cromossomo sofrer mutacao
-MUTATION_STRENGTH = 0.25  # intensidade da mutacao
+MUTATION_STRENGTH = 0.20  # intensidade da mutacao
 CROSSOVER_RATE = 0.85   # probabilidade de cruzamento (senao copia o pai 1)
 CROSSOVER = "um_ponto"  # "um_ponto" ou "uniforme"
 
