@@ -11,12 +11,12 @@ LEFT_TURN  = {0: 2, 2: 1, 1: 3, 3: 0}
 RIGHT_TURN = {0: 3, 3: 1, 1: 2, 2: 0}
 
 # --- Cromossomo da cobra ---
-# Cada cobra (individuo) tem um cromossomo = vetor de 8 pesos. Cada peso
+# Cada cobra (individuo) tem um cromossomo = vetor de pesos. Cada peso
 # pondera uma feature do estado resultante de cada acao possivel (esquerda,
 # reto, direita). A acao de maior pontuacao (cromossomo . features) e'
 # escolhida.
 ACTION_COUNT = 3
-FEATURE_COUNT = 8
+FEATURE_COUNT = 9
 CHROMOSOME_SIZE = FEATURE_COUNT
 
 # Nome curto de cada bit do cromossomo (mesma ordem das features)
@@ -28,29 +28,40 @@ FEATURE_LABELS = (
     "alinha_comida",
     "aproxima",
     "densidade",
+    "explora_centro",
     "bias",
 )
 
 # Descricao longa de cada bit do cromossomo, exibida no painel
 FEATURE_DESCRIPTIONS = (
     "1 se a acao mata a cobra",
-    "inverso da dist. ate a parede",
-    "inverso da dist. ate o corpo",
-    "1 se comida esta na linha de visao",
-    "cosseno do angulo com a comida",
-    "1 se acao aproxima da comida",
+    "inverso da dist. ate a parede (<=8 quadrados)",
+    "inverso da dist. ate o corpo (<=8 quadrados)",
+    "1 se comida na linha de visao (<=8 quadrados)",
+    "cosseno com a comida (so se visivel)",
+    "1 se acao aproxima da comida (so se visivel)",
     "fracao de celulas vizinhas com corpo",
+    "alinha com o centro quando nao ve comida",
     "termo constante (offset)",
 )
 
 # --- Parametros do Algoritmo Genetico ---
-POP_SIZE = 10           # tamanho da populacao por geracao
-MUTATION_RATE = 0.15    # probabilidade de cada bit do cromossomo sofrer mutacao
-MUTATION_STRENGTH = 0.20  # intensidade da mutacao
-CROSSOVER_RATE = 0.85   # probabilidade de cruzamento (senao copia o pai 1)
-CROSSOVER = "um_ponto"  # "um_ponto" ou "uniforme"
 
-# Selecao por roleta (Monte Carlo): unica estrategia.
+# Numero de pesos a otimizar (cada cromossomo tem 'num_pesos' genes).
+NUM_PESOS = CHROMOSOME_SIZE
+
+# Quantidade de individuos (cromossomos) por populacao.
+SOL_POR_POP = 10
+
+# Numero de mutacoes aplicadas em cada filho (genes espacados).
+NUM_MUTACOES = 2
+
+# Numero de geracoes (informativo; o jogo treina indefinidamente).
+NUM_GERACOES = 10
+
+# Estrategias unicas: selecao por roleta (Monte Carlo) e cruzamento de um
+# ponto no centro. Exibidas no painel.
 SELECTION = "roleta"
+CROSSOVER = "um_ponto_centro"
 
 CHECKPOINT_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "checkpoints")

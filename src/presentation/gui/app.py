@@ -34,9 +34,9 @@ def _build_info(trainer, visualize, fps_cap, fps_target):
         "score":                trainer.snake.score,
         "length":               len(trainer.snake.body),
         "steps":                trainer.snake.steps,
-        "pontuacao":            trainer.current_pontuacao(),
+        "aptidao":              trainer.current_aptidao(),
         "best_ever_generation": trainer.best_ever_generation,
-        "avg_pontuacao":        trainer.avg_pontuacao,
+        "media_aptidao":        trainer.media_aptidao,
         "visualize":            visualize,
         "fps_cap":              fps_cap,
         "fps_target":           fps_target,
@@ -68,7 +68,7 @@ def run():
                     save_best(summary["best_chromosome"],
                               summary["generation"],
                               summary["best_score"],
-                              summary["best_pontuacao"])
+                              summary["best_aptidao"])
 
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:

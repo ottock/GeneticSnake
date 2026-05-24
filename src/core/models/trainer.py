@@ -3,41 +3,44 @@ import random
 import numpy as np
 
 from ..ai import config
-from ..ai.pontuacao import pontuacao
-from ..ai.ga import evolve
+from ..ai.aptidao import aptidao
+from ..ai.ga import evoluir
 from ..ai.policy import random_chromosome
 from .snake import Snake
 
 
 class Trainer:
-    def __init__(self, pop_size=None):
-        if pop_size is None:
-            pop_size = config.POP_SIZE
-        self.population = [random_chromosome() for _ in range(pop_size)]
+    def __init__(self, sol_por_pop=None):
+        if sol_por_pop is None:
+            sol_por_pop = config.SOL_POR_POP
+        # Criando a populacao inicial (uma lista de cromossomos 1D).
+        self.population = [random_chromosome() for _ in range(sol_por_pop)]
         self.generation = 1
         self.best_ever_score = 0
         self.best_ever_generation = 0
-        self.avg_pontuacao = 0.0
+        self.media_aptidao = 0.0
         self._begin_generation()
 
 
     def _begin_generation(self):
         self.idx = 0
-        self.pontuacoes = [0.0] * len(self.population)
+        # Aptidao de cada cromossomo na populacao (preenchida ao longo da
+        # geracao, conforme cada cobra termina sua simulacao).
+        self.aptidoes = [0.0] * len(self.population)
         self.gen_best_score = 0
-        self.gen_best_pontuacao = float("-inf")
+        self.gen_best_aptidao = float("-inf")
         self.gen_best_chromosome = None
         self.gen_food_seed = random.randrange(10 ** 9)
         self.snake = Snake(self.population[0], food_seed=self.gen_food_seed)
 
 
     def _finalize_current(self):
-        p = pontuacao(self.snake.steps, self.snake.score)
-        self.pontuacoes[self.idx] = p
+        a = aptidao(self.snake.steps, self.snake.score)
+        self.aptidoes[self.idx] = a
         if self.snake.score > self.gen_best_score:
             self.gen_best_score = self.snake.score
-        if p > self.gen_best_pontuacao:
-            self.gen_best_pontuacao = p
+        if a > self.gen_best_aptidao:
+            self.gen_best_aptidao = a
             self.gen_best_chromosome = self.population[self.idx]
         if self.snake.score > self.best_ever_score:
             self.best_ever_score = self.snake.score
@@ -62,31 +65,33 @@ class Trainer:
 
 
     def advance_generation(self):
-        self.avg_pontuacao = (sum(self.pontuacoes)
-                              / max(1, len(self.pontuacoes)))
+        # Melhor resultado na iteracao atual.
+        self.media_aptidao = (sum(self.aptidoes)
+                              / max(1, len(self.aptidoes)))
         summary = {
             "generation":      self.generation,
             "best_score":      self.gen_best_score,
-            "best_pontuacao":  self.gen_best_pontuacao,
+            "best_aptidao":    self.gen_best_aptidao,
             "best_chromosome": self.gen_best_chromosome,
-            "avg_pontuacao":   self.avg_pontuacao,
+            "media_aptidao":   self.media_aptidao,
         }
-        self.population = evolve(self.population, self.pontuacoes)
+        # Criar a nova populacao com base nos pais e filhos.
+        self.population = evoluir(self.population, self.aptidoes)
         self.generation += 1
         self._begin_generation()
         return summary
 
 
-    def current_pontuacao(self):
-        return pontuacao(self.snake.steps, self.snake.score)
+    def current_aptidao(self):
+        return aptidao(self.snake.steps, self.snake.score)
 
 
-def save_best(chromosome, generation, score, pontuacao_val):
+def save_best(chromosome, generation, score, aptidao_val):
     os.makedirs(config.CHECKPOINT_DIR, exist_ok=True)
     np.save(os.path.join(config.CHECKPOINT_DIR, "snake_best.npy"), chromosome)
     log = os.path.join(config.CHECKPOINT_DIR, "snake_log.csv")
     write_header = not os.path.exists(log)
     with open(log, "a", encoding="utf-8") as f:
         if write_header:
-            f.write("geracao,melhor_comidas,melhor_pontuacao\n")
-        f.write(f"{generation},{score},{pontuacao_val:.2f}\n")
+            f.write("geracao,melhor_comidas,melhor_aptidao\n")
+        f.write(f"{generation},{score},{aptidao_val:.2f}\n")

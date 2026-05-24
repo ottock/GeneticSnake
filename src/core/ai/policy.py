@@ -5,12 +5,13 @@ from . import config
 
 _INIT_PRIOR = np.array([
     -3.0,  # dies          -> evitar morte
-    -0.5,  # 1/wall_dist   -> evitar parede
+    -1.5,  # 1/wall_dist   -> evitar parede (forte)
     -0.5,  # 1/body_dist   -> evitar corpo
-     1.0,  # food_in_ray   -> comida na linha de visao
-     1.5,  # food_align    -> alinhar com a comida
-     1.0,  # food_closer   -> chegar mais perto
+     1.0,  # food_in_ray   -> comida na linha de visao (<=8 quadrados)
+     1.5,  # food_align    -> alinhar com a comida (so se visivel)
+     1.0,  # food_closer   -> chegar mais perto (so se visivel)
     -0.3,  # body_density  -> evitar areas cheias
+     0.5,  # explore_centro-> procurar pelo mapa quando nao ve comida
      0.0,  # bias
 ], dtype=np.float32)
 
@@ -90,18 +91,24 @@ def features_for_action(snake, new_direction):
     food_in_ray = 0.0
     food_align = 0.0
     food_closer = 0.0
+    food_visivel = False
     if food is not None:
-        if not out_of_bounds and _food_in_line(
-                (nx, ny), (dx, dy), food, config.VISION_RANGE):
-            food_in_ray = 1.0
         fx, fy = food
-        vx, vy = fx - hx, fy - hy
-        norm = (vx * vx + vy * vy) ** 0.5
-        if norm > 0:
-            food_align = (vx * dx + vy * dy) / norm
-        cur_d = abs(fx - hx) + abs(fy - hy)
-        new_d = abs(fx - nx) + abs(fy - ny)
-        food_closer = 1.0 if new_d < cur_d else 0.0
+        # A cobra so "ve" a comida se estiver dentro de VISION_RANGE quadrados
+        # (distancia de Chebyshev a partir da cabeca atual).
+        food_visivel = max(abs(fx - hx),
+                           abs(fy - hy)) <= config.VISION_RANGE
+        if food_visivel:
+            if not out_of_bounds and _food_in_line(
+                    (nx, ny), (dx, dy), food, config.VISION_RANGE):
+                food_in_ray = 1.0
+            vx, vy = fx - hx, fy - hy
+            norm = (vx * vx + vy * vy) ** 0.5
+            if norm > 0:
+                food_align = (vx * dx + vy * dy) / norm
+            cur_d = abs(fx - hx) + abs(fy - hy)
+            new_d = abs(fx - nx) + abs(fy - ny)
+            food_closer = 1.0 if new_d < cur_d else 0.0
 
     body_density = 0.0
     if not out_of_bounds:
@@ -112,6 +119,17 @@ def features_for_action(snake, new_direction):
                     count += 1
         body_density = count / 9.0
 
+    # Quando nao ha comida visivel, premia mover-se em direcao ao centro do
+    # mapa (procura pelo mapa). Quando ha comida visivel, esse sinal e' zero.
+    explore_centro = 0.0
+    if not out_of_bounds and not food_visivel:
+        cx = (config.GRID_W - 1) / 2.0
+        cy = (config.GRID_H - 1) / 2.0
+        vx, vy = cx - hx, cy - hy
+        norm = (vx * vx + vy * vy) ** 0.5
+        if norm > 0:
+            explore_centro = (vx * dx + vy * dy) / norm
+
     return np.array([
         dies,
         wall_dist_inv,
@@ -120,6 +138,7 @@ def features_for_action(snake, new_direction):
         food_align,
         food_closer,
         body_density,
+        explore_centro,
         1.0,
     ], dtype=np.float32)
 

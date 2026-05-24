@@ -43,7 +43,7 @@ def _draw_panel_header(screen, fonts, inner_l, y):
     fbig, _, ftiny = fonts
     screen.blit(fbig.render("Genetic Snake", True, P.HEADER), (inner_l, y))
     y += 28
-    screen.blit(ftiny.render("algoritmo genetico - selecao por roleta",
+    screen.blit(ftiny.render("algoritmo genetico - roleta + cruzamento + mutacao",
                              True, P.TEXT_DIM), (inner_l, y))
     return y + 18
 
@@ -71,15 +71,15 @@ def _draw_individual(screen, fonts, inner_l, inner_r, col2, y, info):
     y = _section(screen, fonts, inner_l, inner_r, y, "Individuo atual")
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
                       "Geracao",   info['generation'],
-                      "Individuo", f"{info['individual']}/{config.POP_SIZE}",
+                      "Individuo", f"{info['individual']}/{config.SOL_POR_POP}",
                       P.ACCENT, P.TEXT)
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
                       "Comidas", info['score'],
                       "Tamanho", info['length'],
                       P.TEXT, P.TEXT)
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
-                      "Passos",    info['steps'],
-                      "Pontuacao", f"{info['pontuacao']:.0f}",
+                      "Passos",   info['steps'],
+                      "Aptidao",  f"{info['aptidao']:.0f}",
                       P.TEXT, P.TEXT)
     return y
 
@@ -92,9 +92,9 @@ def _draw_stats(screen, fonts, inner_l, inner_r, col2, y, info):
     screen.blit(fmid.render(str(info['best_ever_generation']),
                             True, P.ACCENT), (inner_l, y + 12))
     y += 34
-    screen.blit(ftiny.render("Pontuacao media", True, P.TEXT_DIM),
+    screen.blit(ftiny.render("Aptidao media", True, P.TEXT_DIM),
                 (inner_l, y))
-    screen.blit(fmid.render(f"{info['avg_pontuacao']:.0f}", True, P.TEXT),
+    screen.blit(fmid.render(f"{info['media_aptidao']:.0f}", True, P.TEXT),
                 (inner_l, y + 12))
     return y + 34
 
@@ -106,12 +106,12 @@ def _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y):
                       "Cruzamento", config.CROSSOVER,
                       P.TEXT, P.TEXT)
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
-                      "Populacao", config.POP_SIZE,
-                      "Cruz %",    f"{int(config.CROSSOVER_RATE * 100)}%",
+                      "Sol/pop",    config.SOL_POR_POP,
+                      "Num pesos",  config.NUM_PESOS,
                       P.TEXT, P.TEXT)
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
-                      "Mutacao",      f"{int(config.MUTATION_RATE * 100)}%",
-                      "Mut. intens.", f"{config.MUTATION_STRENGTH:.2f}",
+                      "Num mutacoes", config.NUM_MUTACOES,
+                      "Num geracoes", config.NUM_GERACOES,
                       P.TEXT, P.TEXT)
     return y
 
