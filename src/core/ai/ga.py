@@ -1,13 +1,14 @@
-"""Algoritmo Genetico com selecao por ROLETA (Monte Carlo).
+"""Algoritmo Genetico: ELITISMO + ROLETA (Monte Carlo).
 
 Estrutura espelhada do material da aula (notebook 'Algoritmos_geneticos'),
-adaptada para usar exclusivamente selecao por roleta:
+combinada com elitismo:
 
   - cal_pop_aptidao : aptidao de cada individuo da populacao
   - shippar         : seleciona pais via roleta (Monte Carlo)
   - cruzamento      : cruzamento de um ponto (no centro)
   - mutacao         : ruido uniforme em genes espacados
-  - evoluir         : driver de uma geracao (roleta + cruzamento + mutacao)
+  - evoluir         : driver de uma geracao
+                      (top NUM_ELITES intactos + roleta + cruzamento + mutacao)
 """
 
 import numpy as np
@@ -90,24 +91,33 @@ def mutacao(prole_cruzamento, num_mutacoes=1):
 
 # MOTOR GENETICO
 def evoluir(populacao, aptidoes):
-    """Produz a proxima geracao: roleta + cruzamento + mutacao.
+    """Produz a proxima geracao: elitismo + roleta + cruzamento + mutacao.
 
-    Para cada filho da nova populacao, dois pais sao sorteados via roleta;
-    em seguida sao combinados por cruzamento e o filho sofre mutacao. Toda
-    a nova populacao e' composta por filhos (sem elitismo).
+    1. Os top NUM_ELITES individuos (maior aptidao) sao copiados INTACTOS
+       para a proxima geracao. Garante que a campea nunca se perde.
+    2. Os outros (SOL_POR_POP - NUM_ELITES) slots sao filhos: dois pais por
+       filho sorteados via roleta (sobre a populacao inteira), combinados
+       por cruzamento e mutados.
     """
     pop_tamanho = (len(populacao), config.CHROMOSOME_SIZE)
     pop_atual = np.stack(populacao).astype(np.float32)
     aptidao = cal_pop_aptidao(aptidoes)
 
-    # Para gerar pop_tamanho[0] filhos sao necessarios 2*N pais sorteados
-    # via roleta (com reposicao).
-    pais = shippar(pop_atual, aptidao, 2 * pop_tamanho[0])
+    # 1. Elitismo: top NUM_ELITES individuos passam intactos.
+    n_elites = min(config.NUM_ELITES, pop_tamanho[0])
+    elites_idx = np.argsort(aptidao)[-n_elites:][::-1]
+    elites = pop_atual[elites_idx]
 
-    # Cruzamento de um ponto produz a nova populacao inteira.
-    prole = cruzamento(pais, prole_tamanho=pop_tamanho)
+    # 2. Filhos: roleta sobre a populacao inteira para escolher os pais
+    #    (2 pais por filho) e gerar (pop - n_elites) filhos.
+    num_filhos = pop_tamanho[0] - n_elites
+    nova = np.empty(pop_tamanho, dtype=np.float32)
+    nova[:n_elites] = elites
 
-    # Mutacao adiciona variacao aos filhos.
-    prole = mutacao(prole, num_mutacoes=config.NUM_MUTACOES)
+    if num_filhos > 0:
+        pais = shippar(pop_atual, aptidao, 2 * num_filhos)
+        prole = cruzamento(pais, prole_tamanho=(num_filhos, pop_tamanho[1]))
+        prole = mutacao(prole, num_mutacoes=config.NUM_MUTACOES)
+        nova[n_elites:] = prole
 
-    return [row.astype(np.float32) for row in prole]
+    return [row.astype(np.float32) for row in nova]

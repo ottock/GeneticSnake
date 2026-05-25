@@ -111,7 +111,7 @@ def _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y):
                       P.TEXT, P.TEXT)
     y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
                       "Num mutacoes", config.NUM_MUTACOES,
-                      "Num geracoes", config.NUM_GERACOES,
+                      "Num elites",   config.NUM_ELITES,
                       P.TEXT, P.TEXT)
     return y
 

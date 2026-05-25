@@ -56,6 +56,11 @@ SOL_POR_POP = 10
 # Numero de mutacoes aplicadas em cada filho (genes espacados).
 NUM_MUTACOES = 2
 
+# Numero de individuos do topo do ranking que sao copiados INTACTOS para a
+# proxima geracao (elitismo). Garante que a melhor cobra nunca se perde por
+# culpa da roleta ou de uma mutacao ruim.
+NUM_ELITES = 2
+
 # Numero de geracoes (informativo; o jogo treina indefinidamente).
 NUM_GERACOES = 10
 
