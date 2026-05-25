@@ -10,7 +10,7 @@ _INIT_PRIOR = np.array([
      1.0,  # food_in_ray   -> comida na linha de visao (<=8 quadrados)
      1.5,  # food_align    -> alinhar com a comida (so se visivel)
      1.0,  # food_closer   -> chegar mais perto (so se visivel)
-    -0.3,  # body_density  -> evitar areas cheias
+    -1.5,  # body_density  -> EVITAR FICAR PRESO (muito mais forte)
      0.5,  # explore_centro-> procurar pelo mapa quando nao ve comida
      0.0,  # bias
 ], dtype=np.float32)
