@@ -10,15 +10,11 @@ _INIT_PRIOR = np.array([
      1.0,  # food_in_ray   -> comida na linha de visao (<=8 quadrados)
      1.5,  # food_align    -> alinhar com a comida (so se visivel)
      1.0,  # food_closer   -> chegar mais perto (so se visivel)
-    -2.0,  # body_density  -> FORTE: nao ficar preso
-     3.0,  # explore_centro-> FORTE: explorar quando nao ve comida
-     1.0,  # bias
+    -1.0,  # body_density  -> FORTE: nao ficar preso
+     0.5,  # explore_centro-> FORTE: explorar quando nao ve comida
+    -2.0,  # 1/tail_dist   -> EVITAR CAUDA propria (nao correr atras dela)
 ], dtype=np.float32)
 
-# 0.0 = puramente aleatorio (evolucao demora pra arrancar)
-# 1.0 = prior forte (geracao 1 ja joga bem)
-# Em 0.5, a populacao inicial mantem diversidade (ruido std 0.6 ainda domina
-# os pesos individuais), mas com inclinacao suficiente pra evitar suicidio.
 _INIT_STRENGTH = 0.5
 
 
@@ -66,6 +62,11 @@ def _food_in_line(start, direction, food, max_range):
     return False
 
 
+def _distance_chebyshev(p1, p2):
+    """Distancia de Chebyshev (max das diferenças)."""
+    return max(abs(p1[0] - p2[0]), abs(p1[1] - p2[1]))
+
+
 def features_for_action(snake, new_direction):
     dx, dy = config.MOVES[new_direction]
     hx, hy = snake.body[0]
@@ -94,8 +95,6 @@ def features_for_action(snake, new_direction):
     food_visivel = False
     if food is not None:
         fx, fy = food
-        # A cobra so "ve" a comida se estiver dentro de VISION_RANGE quadrados
-        # (distancia de Chebyshev a partir da cabeca atual).
         food_visivel = max(abs(fx - hx),
                            abs(fy - hy)) <= config.VISION_RANGE
         if food_visivel:
@@ -119,8 +118,6 @@ def features_for_action(snake, new_direction):
                     count += 1
         body_density = count / 9.0
 
-    # Quando nao ha comida visivel, premia mover-se em direcao ao centro do
-    # mapa (procura pelo mapa). Quando ha comida visivel, esse sinal e' zero.
     explore_centro = 0.0
     if not out_of_bounds and not food_visivel:
         cx = (config.GRID_W - 1) / 2.0
@@ -129,6 +126,14 @@ def features_for_action(snake, new_direction):
         norm = (vx * vx + vy * vy) ** 0.5
         if norm > 0:
             explore_centro = (vx * dx + vy * dy) / norm
+
+    # Distancia ate a cauda propria (evitar correr atras dela)
+    tail_dist_inv = 0.0
+    if len(snake.body) > 1:
+        tail = snake.body[-1]
+        tail_dist = _distance_chebyshev((nx, ny), tail)
+        if tail_dist > 0:
+            tail_dist_inv = 1.0 / tail_dist
 
     return np.array([
         dies,
@@ -139,7 +144,7 @@ def features_for_action(snake, new_direction):
         food_closer,
         body_density,
         explore_centro,
-        1.0,
+        tail_dist_inv,
     ], dtype=np.float32)
 
 

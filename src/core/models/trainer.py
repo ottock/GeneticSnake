@@ -19,6 +19,7 @@ class Trainer:
         self.best_ever_score = 0
         self.best_ever_generation = 0
         self.media_aptidao = 0.0
+        self.gen_best_history = []
         self._begin_generation()
 
 
@@ -68,12 +69,15 @@ class Trainer:
         # Melhor resultado na iteracao atual.
         self.media_aptidao = (sum(self.aptidoes)
                               / max(1, len(self.aptidoes)))
+        self.gen_best_history.append(self.gen_best_score)
         summary = {
-            "generation":      self.generation,
-            "best_score":      self.gen_best_score,
-            "best_aptidao":    self.gen_best_aptidao,
-            "best_chromosome": self.gen_best_chromosome,
-            "media_aptidao":   self.media_aptidao,
+            "generation":          self.generation,
+            "best_score":          self.gen_best_score,
+            "best_aptidao":        self.gen_best_aptidao,
+            "best_chromosome":     self.gen_best_chromosome,
+            "media_aptidao":       self.media_aptidao,
+            "best_ever_score":     self.best_ever_score,
+            "best_ever_generation": self.best_ever_generation,
         }
         # Criar a nova populacao com base nos pais e filhos.
         self.population = evoluir(self.population, self.aptidoes)

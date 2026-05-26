@@ -86,17 +86,47 @@ def _draw_individual(screen, fonts, inner_l, inner_r, col2, y, info):
 
 def _draw_stats(screen, fonts, inner_l, inner_r, col2, y, info):
     _, fmid, ftiny = fonts
-    y = _section(screen, fonts, inner_l, inner_r, y, "Estatisticas")
-    screen.blit(ftiny.render("Melhor geracao", True, P.TEXT_DIM),
-                (inner_l, y))
-    screen.blit(fmid.render(str(info['best_ever_generation']),
-                            True, P.ACCENT), (inner_l, y + 12))
-    y += 34
+    y = _section(screen, fonts, inner_l, inner_r, y, "Estatisticas (TODAS AS GERACOES)")
+    y = _draw_kv_pair(screen, fonts, inner_l, col2, y,
+                      "Melhor score", info.get('best_ever_score', 0),
+                      "Geracao",      info.get('best_ever_generation', 0),
+                      P.ACCENT, P.ACCENT)
     screen.blit(ftiny.render("Aptidao media", True, P.TEXT_DIM),
                 (inner_l, y))
     screen.blit(fmid.render(f"{info['media_aptidao']:.0f}", True, P.TEXT),
                 (inner_l, y + 12))
     return y + 34
+
+
+def _draw_history(screen, fonts, inner_l, inner_r, y, history):
+    _, _, ftiny = fonts
+    y = _section(screen, fonts, inner_l, inner_r, y,
+                 "Historico (melhor score por geracao)")
+    if not history:
+        screen.blit(ftiny.render("(sem geracoes concluidas)", True, P.TEXT_DIM),
+                    (inner_l, y))
+        return y + 14
+    chart_h = 30
+    chart_w = inner_r - inner_l
+    max_visible = max(8, chart_w // 5)
+    visible = history[-max_visible:]
+    bw = max(2, chart_w // len(visible))
+    max_score = max(visible) if max(visible) > 0 else 1
+    base_y = y + chart_h
+    pygame.draw.line(screen, P.DIVIDER, (inner_l, base_y),
+                     (inner_l + bw * len(visible), base_y))
+    for i, s in enumerate(visible):
+        bh = int((s / max_score) * (chart_h - 2)) if max_score > 0 else 0
+        x = inner_l + i * bw
+        if bh > 0:
+            pygame.draw.rect(screen, P.ACCENT,
+                             (x, base_y - bh, bw - 1, bh))
+    start_gen = len(history) - len(visible) + 1
+    end_gen = len(history)
+    screen.blit(ftiny.render(
+        f"G{start_gen}..G{end_gen}   max={max_score}   ultimo={visible[-1]}",
+        True, P.TEXT_DIM), (inner_l, base_y + 2))
+    return base_y + 14
 
 
 def _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y):
@@ -187,6 +217,8 @@ def draw_panel(screen, layout, fonts, info):
     y = _draw_panel_header(screen, fonts, inner_l, y)
     y = _draw_individual(screen, fonts, inner_l, inner_r, col2, y, info)
     y = _draw_stats(screen, fonts, inner_l, inner_r, col2, y, info)
+    y = _draw_history(screen, fonts, inner_l, inner_r, y,
+                      info.get("gen_best_history", []))
     y = _draw_ga_params(screen, fonts, inner_l, inner_r, col2, y)
     y = _draw_chromosome(screen, fonts, inner_l, inner_r, y,
                          info.get("chromosome"))

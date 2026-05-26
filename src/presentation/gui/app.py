@@ -35,12 +35,14 @@ def _build_info(trainer, visualize, fps_cap, fps_target):
         "length":               len(trainer.snake.body),
         "steps":                trainer.snake.steps,
         "aptidao":              trainer.current_aptidao(),
+        "best_ever_score":      trainer.best_ever_score,
         "best_ever_generation": trainer.best_ever_generation,
         "media_aptidao":        trainer.media_aptidao,
         "visualize":            visualize,
         "fps_cap":              fps_cap,
         "fps_target":           fps_target,
         "chromosome":           trainer.snake.chromosome,
+        "gen_best_history":     trainer.gen_best_history,
     }
 
 
@@ -59,16 +61,19 @@ def run():
     running = True
 
     while running:
-        snake_alive = trainer.step()
-
-        if not snake_alive:
-            if not trainer.next_individual():
-                summary = trainer.advance_generation()
-                if summary["best_chromosome"] is not None:
-                    save_best(summary["best_chromosome"],
-                              summary["generation"],
-                              summary["best_score"],
-                              summary["best_aptidao"])
+        sim_deadline = pygame.time.get_ticks() + (0 if fps_cap else 33)
+        while True:
+            snake_alive = trainer.step()
+            if not snake_alive:
+                if not trainer.next_individual():
+                    summary = trainer.advance_generation()
+                    if summary["best_chromosome"] is not None:
+                        save_best(summary["best_chromosome"],
+                                  summary["generation"],
+                                  summary["best_score"],
+                                  summary["best_aptidao"])
+            if fps_cap or pygame.time.get_ticks() >= sim_deadline:
+                break
 
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:

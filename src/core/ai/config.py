@@ -2,7 +2,7 @@ import os
 
 # --- Tabuleiro / regras do jogo ---
 GRID_W, GRID_H = 20, 20
-MAX_STEPS_PER_FOOD = 70
+MAX_STEPS_PER_FOOD = 100
 VISION_RANGE = 8
 
 # Direcoes: 0=cima 1=baixo 2=esquerda 3=direita
@@ -29,7 +29,7 @@ FEATURE_LABELS = (
     "aproxima",
     "densidade",
     "explora_centro",
-    "bias",
+    "1/dist_cauda",
 )
 
 # Descricao longa de cada bit do cromossomo, exibida no painel
@@ -42,7 +42,7 @@ FEATURE_DESCRIPTIONS = (
     "1 se acao aproxima da comida (so se visivel)",
     "fracao de celulas vizinhas com corpo",
     "alinha com o centro quando nao ve comida",
-    "termo constante (offset)",
+    "inverso da dist. ate a cauda propria",
 )
 
 # --- Parametros do Algoritmo Genetico ---
@@ -51,7 +51,7 @@ FEATURE_DESCRIPTIONS = (
 NUM_PESOS = CHROMOSOME_SIZE
 
 # Quantidade de individuos (cromossomos) por populacao.
-SOL_POR_POP = 10
+SOL_POR_POP = 100
 
 # Numero de mutacoes aplicadas em cada filho (genes espacados).
 NUM_MUTACOES = 2
@@ -59,10 +59,10 @@ NUM_MUTACOES = 2
 # Numero de individuos do topo do ranking que sao copiados INTACTOS para a
 # proxima geracao (elitismo). Garante que a melhor cobra nunca se perde por
 # culpa da roleta ou de uma mutacao ruim.
-NUM_ELITES = 2
+NUM_ELITES = 4
 
 # Numero de geracoes (informativo; o jogo treina indefinidamente).
-NUM_GERACOES = 10
+NUM_GERACOES = 100
 
 # Estrategias unicas: selecao por roleta (Monte Carlo) e cruzamento de um
 # ponto no centro. Exibidas no painel.
