@@ -2,7 +2,7 @@ import os
 
 # --- Tabuleiro / regras do jogo ---
 GRID_W, GRID_H = 20, 20
-MAX_STEPS_PER_FOOD = 100
+MAX_STEPS_PER_FOOD = 70
 VISION_RANGE = 8
 
 # Direcoes: 0=cima 1=baixo 2=esquerda 3=direita
